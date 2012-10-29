@@ -6,4 +6,7 @@ There are not many command line options to keep things simple, if you need more,
 or add them yourself.
 The used ffmpeg and lame command lines can also be printed using --print.
 
+Compile with:
+ $> ghc -threaded convert-audio.hs
+
 -- Christian
