@@ -1,0 +1,9 @@
+This is a command line tool to convert audio files using ffmpeg and lame.
+You need both installed, as well as the /spawn/ Haskell library.
+The number of concurrent processes can be chosen from the command line,
+and currently the program can convert between ogg, mp3, and flac, with fixed bitrate.
+There are not many command line options to keep things simple, if you need more, let me know
+or add them yourself.
+The used ffmpeg and lame command lines can also be printed using --print.
+
+-- Christian
