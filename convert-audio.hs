@@ -68,11 +68,12 @@ main = do
 
       getN s = ProcNum $ read s
 
-      (opts, fnames, _) = getOpt RequireOrder opts' args
+      (opts, fnames, _) = getOpt Permute opts' args
       
       fmt = maybe Ogg id $ listToMaybe $ map getFormat $ filter formatArgs opts
-        where formatArgs Print = False
+        where 
               formatArgs (FormatArg _) = True
+              formatArgs _ = False
               getFormat (FormatArg x) = x
 
       n = maybe 1 unProcNum $ listToMaybe $ filter nArg opts
