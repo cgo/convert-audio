@@ -15,7 +15,9 @@ import System.FilePath
 import Data.List (intercalate)
 import Data.Maybe (listToMaybe)
 
-import Control.Concurrent.Spawn
+import Control.Concurrent
+import Control.Concurrent.QSem
+import Control.Exception
 
 data Format = Ogg | Mp3 | Flac deriving (Show, Eq)
 
@@ -49,13 +51,23 @@ conversionCommand Mp3 fp = intercalate " "
                            ,"lame -r -b 192"
                            ,"-"
                            ,"\"" ++ convertFilename Mp3 fp ++ "\""]
-                           
+
 conversionCommand fmt fp = intercalate " "
                            ["ffmpeg -i", "\"" ++ fp ++ "\""
                            , "-acodec", codec fmt
                            , "-aq", quality
+                           , "-y"
                            , "\"" ++ convertFilename fmt fp ++ "\"" ]
   where quality = "7"
+
+
+parMapIO_ :: (a -> IO ()) -> [a] -> IO ()
+parMapIO_ act as = do
+  let n = length as
+  sem <- newQSem n
+  mapM_ (\a -> forkIO (bracket_ (waitQSem sem) (signalQSem sem) (act a))) as
+  waitQSem sem
+
 
 
 main = do
@@ -69,9 +81,9 @@ main = do
       getN s = ProcNum $ read s
 
       (opts, fnames, _) = getOpt Permute opts' args
-      
+
       fmt = maybe Ogg id $ listToMaybe $ map getFormat $ filter formatArgs opts
-        where 
+        where
               formatArgs (FormatArg _) = True
               formatArgs _ = False
               getFormat (FormatArg x) = x
@@ -80,14 +92,13 @@ main = do
         where nArg (ProcNum _) = True
               nArg _ = False
               unProcNum (ProcNum x) = x
-              
+
       systemCommand | null $ filter (== Print) opts = \a -> system a >> return ()
                     | otherwise                     = putStrLn
-                                                      
+
       cmds = map (conversionCommand fmt) fnames
-      
+
   if (null fnames)
     then putStrLn $ usageInfo "convert-audio [option(s)] filenames" opts'
     else
-      pool n >>= \f ->
-      parMapIO_ (f . systemCommand) cmds
+      parMapIO_ systemCommand cmds
